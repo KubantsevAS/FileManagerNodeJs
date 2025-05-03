@@ -1,19 +1,24 @@
 {
-  "name": "packagemanagernodejs",
+  "name": "filemanagernodejs",
   "version": "1.0.0",
   "main": "index.js",
+  "engines": {
+    "node": ">=22.14.0"
+  },
+  "type": "module",
   "scripts": {
+    "start": "node index.js -- --username=your_username",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/KubantsevAS/PackageManagerNodeJs.git"
+    "url": "git+https://github.com/KubantsevAS/FileManagerNodeJs.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/KubantsevAS/PackageManagerNodeJs/issues"
+    "url": "https://github.com/KubantsevAS/FileManagerNodeJs/issues"
   },
-  "homepage": "https://github.com/KubantsevAS/PackageManagerNodeJs#readme",
+  "homepage": "https://github.com/KubantsevAS/FileManagerNodeJs#readme",
   "description": ""
 }
