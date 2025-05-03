@@ -13,18 +13,19 @@ import {
 } from './services/index.js';
 
 export class FileManager {
+    #messages = getMessages();
+    #cliArguments = getCliArguments();
+
     constructor () {
         this.readline = readline.createInterface({ input, output });
-        this.cliArguments = getCliArguments();
-        this.messages = getMessages();
         this.currentDir = os.homedir();
     }
 
     async initialize() {
         const ANONYMOUS = 'Anonymous';
-        const username = this.cliArguments.username ?? ANONYMOUS;
-        const introMessage = this.messages.getIntro(username);
-        const outroMessage = this.messages.getOutro(username);
+        const username = this.#cliArguments.username ?? ANONYMOUS;
+        const introMessage = this.#messages.getIntro(username);
+        const outroMessage = this.#messages.getOutro(username);
 
         console.log(introMessage);
 
@@ -68,11 +69,11 @@ export class FileManager {
     }
 
     #throwInputError() {
-        throw new Error(this.messages.getInvalidInput());
+        throw new Error(this.#messages.getInvalidInput());
     }
 
     #throwOperationError(errorMessage) {
-        throw new Error(`${this.messages.getOperationFailed()} - ${errorMessage}`);
+        throw new Error(`${this.#messages.getOperationFailed()} - ${errorMessage}`);
     }
 
     #goToUpperDirectory() {
@@ -94,6 +95,6 @@ export class FileManager {
     }
 
     #printCurrentDirPath() {
-        console.log(this.messages.getCurrentDir(this.currentDir));
+        console.log(this.#messages.getCurrentDir(this.currentDir));
     };
 };
