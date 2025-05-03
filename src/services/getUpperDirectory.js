@@ -1,4 +1,4 @@
-import path from 'path';
+import path from 'node:path';
 
 export const getUpperDirectory = currentDirectory => {
     const newDirectory = path.dirname(currentDirectory);

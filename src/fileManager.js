@@ -20,12 +20,14 @@ export class FileManager {
         const outroMessage = this.messages.getOutro(username);
 
         console.log(introMessage);
+
+        process.chdir(this.currentDir);
+
         process.nextTick(() => this.#printCurrentDirectory());
     
-        this.readline.on('line', input => {
-            // console.log(`INPUT: ${input}\n`);
+        this.readline.on('line', async input => {
             try {
-                this.#handleInput(input);
+                await this.#handleInput(input);
             } catch (error) {
                 console.error(error.message);
             }
@@ -36,21 +38,22 @@ export class FileManager {
         });
     }
 
-    #handleInput(input) {
+    async #handleInput(input) {
         const commandMap = {
-            up: () => this.#goToUpperDirectory(), // TODO
-            cd: () => console.log('changeDir'), // TODO
+            up: () => this.#goToUpperDirectory(),
+            cd: targetDirectory => this.#changeDirectory(targetDirectory),
             ls: () => console.log('ListDir'), // TODO
             '.exit': () => this.readline.close(),
         }
 
-        const [inputCommand] = input.split(' ');
+        const [inputCommand, param1, param2] = input.split(' ');
+
         if (!commandMap.hasOwnProperty(inputCommand)) {
             this.#throwInputError()
         };
 
         try {
-            commandMap[inputCommand]();
+            await commandMap[inputCommand](param1, param2);
             this.#printCurrentDirectory();
         } catch {
             this.#throwOperationError()
@@ -73,8 +76,12 @@ export class FileManager {
         }
     }
 
-    #changeDirectory(currentDir) {
-        const newDirectory = getChangedDirectory();
+    async #changeDirectory(targetDirectory) {
+        const changedDirectory = await getChangedDirectory(targetDirectory);
+        
+        if (changedDirectory) {
+            this.currentDir = changedDirectory;
+        }
     }
 
     #printCurrentDirectory() {
