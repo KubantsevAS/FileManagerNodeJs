@@ -55,8 +55,8 @@ export class FileManager {
         try {
             await commandMap[inputCommand](param1, param2);
             this.#printCurrentDirectory();
-        } catch {
-            this.#throwOperationError()
+        } catch (error) {
+            this.#throwOperationError(error.message)
         }
     }
 
@@ -64,8 +64,8 @@ export class FileManager {
         throw new Error(this.messages.getInvalidInput());
     }
 
-    #throwOperationError() {
-        throw new Error(this.messages.getOperationFailed());
+    #throwOperationError(errorMessage) {
+        throw new Error(`${this.messages.getOperationFailed()} - ${errorMessage}`);
     }
 
     #goToUpperDirectory() {
@@ -78,10 +78,7 @@ export class FileManager {
 
     async #changeDirectory(targetDirectory) {
         const changedDirectory = await getChangedDirectory(targetDirectory);
-        
-        if (changedDirectory) {
-            this.currentDir = changedDirectory;
-        }
+        this.currentDir = changedDirectory;
     }
 
     #printCurrentDirectory() {
