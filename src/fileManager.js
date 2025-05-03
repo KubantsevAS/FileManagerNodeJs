@@ -14,7 +14,7 @@ import {
 
 export class FileManager {
     #messages = getMessages();
-    #cliArguments = getCliArguments();
+    #cliArguments = getCliArguments(process.argv);
 
     constructor () {
         this.readline = readline.createInterface({ input, output });
@@ -54,17 +54,24 @@ export class FileManager {
             '.exit': () => this.readline.close(),
         }
 
-        const [inputCommand, param1, param2] = input.split(' ');
+        const spaceIdx = input.indexOf(' ');
+        const parsedInput = spaceIdx !== -1 
+            ? [input.slice(0, spaceIdx), input.slice(spaceIdx + 1)]
+            : [input];
+        const [inputCommand, parameter] = parsedInput;
 
         if (!commandMap.hasOwnProperty(inputCommand)) {
-            this.#throwInputError()
+            this.#throwInputError();
         };
 
         try {
-            await commandMap[inputCommand](param1, param2);
-            this.#printCurrentDirPath();
+            await commandMap[inputCommand](parameter);
+
+            if (inputCommand !== '.exit') {
+                this.#printCurrentDirPath();
+            }
         } catch (error) {
-            this.#throwOperationError(error.message)
+            this.#throwOperationError(error.message);
         }
     }
 
