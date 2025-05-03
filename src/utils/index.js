@@ -1,2 +1,2 @@
-export * from "./getCliArguments.js";
-export * from "./getMessages.js";
+export { getCliArguments } from "./getCliArguments.js";
+export { getMessages } from "./getMessages.js";

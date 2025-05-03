@@ -1,9 +1,16 @@
 import { stdin as input, stdout as output } from 'node:process';
-import { getUpperDirectory, getChangedDirectory } from './services/index.js'
-import path from 'path';
-import { getCliArguments, getMessages } from './utils/index.js';
 import * as readline from 'node:readline/promises';
 import os from 'os';
+
+import {
+    getCliArguments,
+    getMessages,
+} from './utils/index.js';
+import {
+    getUpperDirectory,
+    getChangedDirectory,
+    getDirectoryContent,
+} from './services/index.js';
 
 export class FileManager {
     constructor () {
@@ -23,7 +30,7 @@ export class FileManager {
 
         process.chdir(this.currentDir);
 
-        process.nextTick(() => this.#printCurrentDirectory());
+        process.nextTick(() => this.#printCurrentDirPath());
     
         this.readline.on('line', async input => {
             try {
@@ -42,7 +49,7 @@ export class FileManager {
         const commandMap = {
             up: () => this.#goToUpperDirectory(),
             cd: targetDirectory => this.#changeDirectory(targetDirectory),
-            ls: () => console.log('ListDir'), // TODO
+            ls: () => this.#printDirectoryList(),
             '.exit': () => this.readline.close(),
         }
 
@@ -54,7 +61,7 @@ export class FileManager {
 
         try {
             await commandMap[inputCommand](param1, param2);
-            this.#printCurrentDirectory();
+            this.#printCurrentDirPath();
         } catch (error) {
             this.#throwOperationError(error.message)
         }
@@ -81,7 +88,12 @@ export class FileManager {
         this.currentDir = changedDirectory;
     }
 
-    #printCurrentDirectory() {
+    async #printDirectoryList() {
+        const dirContent = await getDirectoryContent(this.currentDir);
+        console.table(dirContent);
+    }
+
+    #printCurrentDirPath() {
         console.log(this.messages.getCurrentDir(this.currentDir));
     };
 };
