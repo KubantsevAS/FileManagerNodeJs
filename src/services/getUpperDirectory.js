@@ -12,6 +12,6 @@ export const getUpperDirectory = currentDirectory => {
 
         return newDirectory;
     } catch (error) {
-        throw new Error(error);
+        throw new Error(error.message);
     }
 };

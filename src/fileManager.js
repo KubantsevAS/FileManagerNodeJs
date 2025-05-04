@@ -1,7 +1,6 @@
 import { stdin as input, stdout as output } from 'node:process';
 import * as readline from 'node:readline/promises';
 import fs from 'node:fs/promises';
-import path from 'path';
 import os from 'os';
 
 import {
@@ -13,6 +12,8 @@ import {
     getChangedDirectory,
     getDirectoryContent,
     readFileContent,
+    createDirectory,
+    createFile,
     getOsInfo,
 } from './services/index.js';
 
@@ -66,9 +67,9 @@ export class FileManager {
                 this.#checkIsParameterExist(fileName);
                 await this.createNewFile(fileName);
             },
-            mkdir: async dirName => {
-                this.#checkIsParameterExist(fileName);
-                await this.#createNewDirectory(dirName)
+            mkdir: async directoryPath => {
+                this.#checkIsParameterExist(directoryPath);
+                await this.createNewDirectory(directoryPath);
             },
             // rn:
             // cp:
@@ -133,29 +134,18 @@ export class FileManager {
     }
 
     async createNewFile(filename) {
-        const filePath = path.join(this.currentDir, filename);
-
         try {
-            const fileToCreate = await fs.open(filePath, 'wx');
-            await fileToCreate.writeFile('');
-            await fileToCreate.close();
-          } catch (error) {
+            await createFile(filename);
+        } catch (error) {
             this.#throwOperationError(error.message);
         }
     }
 
-    async #createNewDirectory(dirName) {
-        const dirPath = path.join(this.currentDir, dirName);
-
+    async createNewDirectory(directoryPath) {
         try {
-            await fs.access(dirPath);
-            throw new Error('Directory already exists');
+            await createDirectory(directoryPath);
         } catch (error) {
-            if (error.message === 'Directory already exists') {
-                throw error;
-            }
-
-            await fs.mkdir(dirPath, { recursive: true });
+            this.#throwOperationError(error.message);
         }
     }
 
@@ -179,7 +169,7 @@ export class FileManager {
         }
     }
     
-    #throwInputError(errorMessage = '') {
+    #throwInputError(errorMessage) {
         throw new Error(`${this.#messages.getInvalidInput()} - ${errorMessage}`);
     }
 
