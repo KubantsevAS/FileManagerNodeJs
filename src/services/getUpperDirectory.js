@@ -9,8 +9,9 @@ export const getUpperDirectory = currentDirectory => {
 
     try {
         process.chdir(newDirectory);
-        return path.dirname(currentDirectory);
+
+        return newDirectory;
     } catch (error) {
-        throw new Error(error.message);
+        throw new Error(error);
     }
 };

@@ -1,5 +1,6 @@
 import { stdin as input, stdout as output } from 'node:process';
 import * as readline from 'node:readline/promises';
+import fs from 'node:fs/promises';
 import os from 'os';
 
 import {
@@ -35,6 +36,7 @@ export class FileManager {
     
         this.readline.on('line', async input => {
             try {
+                console.log();
                 await this.#handleInput(input);
             } catch (error) {
                 console.error(error.message);
@@ -51,6 +53,9 @@ export class FileManager {
             up: () => this.#goToUpperDirectory(),
             cd: targetDirectory => this.#changeDirectory(targetDirectory),
             ls: () => this.#printDirectoryList(),
+            cat: filePath => this.#printFileContent(filePath),
+            // add: filePath => this.#printFileContent(filePath),
+            // mkdir: filePath => this.#printFileContent(filePath),
             '.exit': () => this.readline.close(),
         }
 
@@ -99,6 +104,28 @@ export class FileManager {
     async #printDirectoryList() {
         const dirContent = await getDirectoryContent(this.currentDir);
         console.table(dirContent);
+    }
+
+    async #printFileContent(filePath) {
+        const fileToRead = await fs.open(filePath);
+        const readStream = fileToRead.createReadStream();
+
+        await new Promise((resolve, reject) => {
+            readStream.on('data', chunk => {
+                process.stdout.write(chunk);
+            });
+            
+            readStream.on('end', () => {
+                console.log('\n');
+                fileToRead.close();
+                resolve();
+            });
+            
+            readStream.on('error', error => {
+                fileToRead.close();
+                reject(error);
+            });
+        });
     }
 
     #printCurrentDirPath() {

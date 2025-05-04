@@ -1,4 +1,4 @@
-import { access, readdir, lstat } from 'node:fs/promises';
+import { readdir, lstat } from 'node:fs/promises';
 import path from 'node:path';
 
 export const getDirectoryContent = async currentDirectory => {
