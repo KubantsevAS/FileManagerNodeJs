@@ -13,6 +13,7 @@ import {
     getDirectoryContent,
     readFileContent,
     createDirectory,
+    copyFileToDest,
     createFile,
     renameFile,
     getOsInfo,
@@ -60,29 +61,14 @@ export class FileManager {
             up: () => this.goToUpperDirectory(),
             cd: targetDirectory => this.changeDirectory(targetDirectory),
             ls: () => this.printDirectoryList(),
-            cat: async filePath => {
-                await this.#validatePath(filePath);
-                await this.printFileContent(filePath);
-            },
-            add: async fileName => {
-                this.#checkIsParameterExist(fileName);
-                await this.createNewFile(fileName);
-            },
-            mkdir: async directoryPath => {
-                this.#checkIsParameterExist(directoryPath);
-                await this.createNewDirectory(directoryPath);
-            },
-            rn: async fileNames => {
-                this.#checkIsParameterExist(fileNames);
-                await this.renameFileName(fileNames);
-            },
-            // cp:
+            cat: filePath => this.printFileContent(filePath),
+            add: fileName => this.createNewFile(fileName),
+            mkdir: directoryPath => this.createNewDirectory(directoryPath),
+            rn: fileNames => this.renameFileName(fileNames),
+            cp: params => this.copyFileToNewDest(params),
             // mv:
             // rm:
-            os: parameter => {
-                this.#checkIsParameterExist(parameter);
-                this.printOsInfo(parameter);
-            },
+            os: parameter => this.printOsInfo(parameter),
             '.exit': () => this.readline.close(),
         }
 
@@ -130,23 +116,35 @@ export class FileManager {
     }
 
     async printFileContent(filePath) {
+        await this.#validatePath(filePath);
         await this.#launchOperation(readFileContent, [filePath]);
     }
 
-    async createNewFile(filename) {
-        await this.#launchOperation(createFile, [filename]);
+    async createNewFile(fileName) {
+        this.#checkIsParameterExist(fileName);
+        await this.#launchOperation(createFile, [fileName]);
     }
 
     async createNewDirectory(directoryPath) {
+        this.#checkIsParameterExist(directoryPath);
         await this.#launchOperation(createDirectory, [directoryPath]);
     }
 
     async renameFileName(fileNames) {
+        this.#checkIsParameterExist(fileNames);
         const { oldPath, newPath } = await this.#getValidatedPaths(fileNames);
         await this.#launchOperation(renameFile, [oldPath, newPath]);
     }
 
+    async copyFileToNewDest(params) {
+        this.#checkIsParameterExist(params);
+        const { oldPath: fileName, newPath: targetPath } = await this.#getValidatedPaths(params);
+        await this.#validatePath(targetPath);
+        await this.#launchOperation(copyFileToDest, [fileName, targetPath]);
+    }
+
     printOsInfo(params) {
+        this.#checkIsParameterExist(params);
         const parametersArray = Object.keys(getCliArguments(params.split(' ')));
 
         if (!parametersArray.length) {
