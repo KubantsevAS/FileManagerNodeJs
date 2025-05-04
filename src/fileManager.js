@@ -1,7 +1,8 @@
 import { stdin as input, stdout as output } from 'node:process';
 import * as readline from 'node:readline/promises';
 import fs from 'node:fs/promises';
-import os from 'os';
+import path from 'node:path';
+import os from 'node:os';
 
 import {
     getCliArguments,
@@ -16,6 +17,7 @@ import {
     copyFileToDest,
     createFile,
     renameFile,
+    deleteFile,
     getOsInfo,
 } from './services/index.js';
 
@@ -67,7 +69,7 @@ export class FileManager {
             rn: fileNames => this.renameFileName(fileNames),
             cp: params => this.copyFileToNewDest(params),
             // mv:
-            // rm:
+            rm: filePath => this.deleteTargetFile(filePath),
             os: parameter => this.printOsInfo(parameter),
             '.exit': () => this.readline.close(),
         }
@@ -143,6 +145,11 @@ export class FileManager {
         await this.#launchOperation(copyFileToDest, [fileName, targetPath]);
     }
 
+    async deleteTargetFile(filePath) {
+        await this.#validatePath(filePath);
+        await this.#launchOperation(deleteFile, [filePath]);
+    }
+
     printOsInfo(params) {
         this.#checkIsParameterExist(params);
         const parametersArray = Object.keys(getCliArguments(params.split(' ')));
@@ -194,12 +201,12 @@ export class FileManager {
         const [oldPath, newPath] = paths;
         await this.#validatePath(oldPath);
 
-        return { oldPath, newPath };
+        return { oldPath: path.join(oldPath), newPath: path.join(newPath) };
     }
 
-    async #validatePath(path) {
+    async #validatePath(specifiedPath) {
         try {
-            await fs.access(path);
+            await fs.access(path.join(specifiedPath));
         } catch (error) {
             this.#throwInputError(error.message);
         }
