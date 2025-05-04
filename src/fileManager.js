@@ -130,37 +130,20 @@ export class FileManager {
     }
 
     async printFileContent(filePath) {
-        try {
-            await readFileContent(filePath);
-        } catch (error) {
-            this.#throwOperationError(error.message);
-        }
+        await this.#launchOperation(readFileContent, [filePath]);
     }
 
     async createNewFile(filename) {
-        try {
-            await createFile(filename);
-        } catch (error) {
-            this.#throwOperationError(error.message);
-        }
+        await this.#launchOperation(createFile, [filename]);
     }
 
     async createNewDirectory(directoryPath) {
-        try {
-            await createDirectory(directoryPath);
-        } catch (error) {
-            this.#throwOperationError(error.message);
-        }
+        await this.#launchOperation(createDirectory, [directoryPath]);
     }
 
     async renameFileName(fileNames) {
         const { oldPath, newPath } = await this.#getValidatedPaths(fileNames);
-
-        try {
-            await renameFile(oldPath, newPath);
-        } catch (error) {
-            this.#throwOperationError(error.message);
-        }
+        await this.#launchOperation(renameFile, [oldPath, newPath]);
     }
 
     printOsInfo(params) {
@@ -189,6 +172,14 @@ export class FileManager {
 
     #throwOperationError(errorMessage) {
         throw new Error(`${this.#messages.getOperationFailed()} - ${errorMessage}`);
+    }
+
+    async #launchOperation(callback, params) {
+        try {
+            await callback(...params);
+        } catch (error) {
+            this.#throwOperationError(error.message);
+        }
     }
 
     async #getValidatedPaths(specifiedPaths) {
