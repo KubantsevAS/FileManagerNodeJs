@@ -14,6 +14,7 @@ import {
     readFileContent,
     createDirectory,
     createFile,
+    renameFile,
     getOsInfo,
 } from './services/index.js';
 
@@ -71,7 +72,10 @@ export class FileManager {
                 this.#checkIsParameterExist(directoryPath);
                 await this.createNewDirectory(directoryPath);
             },
-            // rn:
+            rn: async fileNames => {
+                this.#checkIsParameterExist(fileNames);
+                await this.renameFileName(fileNames);
+            },
             // cp:
             // mv:
             // rm:
@@ -149,6 +153,16 @@ export class FileManager {
         }
     }
 
+    async renameFileName(fileNames) {
+        const { oldPath, newPath } = await this.#getValidatedPaths(fileNames);
+
+        try {
+            await renameFile(oldPath, newPath);
+        } catch (error) {
+            this.#throwOperationError(error.message);
+        }
+    }
+
     printOsInfo(params) {
         const parametersArray = Object.keys(getCliArguments(params.split(' ')));
 
@@ -175,6 +189,23 @@ export class FileManager {
 
     #throwOperationError(errorMessage) {
         throw new Error(`${this.#messages.getOperationFailed()} - ${errorMessage}`);
+    }
+
+    async #getValidatedPaths(specifiedPaths) {
+        const paths = specifiedPaths.split(' ');
+
+        if (paths.length < 2) {
+            this.#throwInputError(this.#messages.getMissingOperand());
+        }
+
+        if (paths.length > 2) {
+            this.#throwInputError(this.#messages.getTooManyArguments());
+        }
+
+        const [oldPath, newPath] = paths;
+        await this.#validatePath(oldPath);
+
+        return { oldPath, newPath };
     }
 
     async #validatePath(path) {
