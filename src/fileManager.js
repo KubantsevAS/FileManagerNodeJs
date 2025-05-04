@@ -12,6 +12,8 @@ import {
     getUpperDirectory,
     getChangedDirectory,
     getDirectoryContent,
+    readFileContent,
+    getOsInfo,
 } from './services/index.js';
 
 export class FileManager {
@@ -29,11 +31,9 @@ export class FileManager {
         const introMessage = this.#messages.getIntro(username);
         const outroMessage = this.#messages.getOutro(username);
 
-        console.log(introMessage);
-
         process.chdir(this.currentDir);
-
-        process.nextTick(() => this.#printCurrentDirPath());
+        console.log(introMessage);
+        this.printCurrentDirPath();
     
         this.readline.on('line', async input => {
             try {
@@ -49,14 +49,35 @@ export class FileManager {
         });
     }
 
+    printCurrentDirPath() {
+        console.log(this.#messages.getCurrentDir(this.currentDir));
+    };
+
     async #handleInput(input) {
         const commandMap = {
-            up: () => this.#goToUpperDirectory(),
-            cd: targetDirectory => this.#changeDirectory(targetDirectory),
-            ls: () => this.#printDirectoryList(),
-            cat: filePath => this.#printFileContent(filePath),
-            add: fileName => this.#createNewFile(fileName),
-            // mkdir: filePath => this.#printFileContent(filePath),
+            up: () => this.goToUpperDirectory(),
+            cd: targetDirectory => this.changeDirectory(targetDirectory),
+            ls: () => this.printDirectoryList(),
+            cat: async filePath => {
+                await this.#validatePath(filePath);
+                await this.printFileContent(filePath);
+            },
+            add: async fileName => {
+                this.#checkIsParameterExist(fileName);
+                await this.createNewFile(fileName);
+            },
+            mkdir: async dirName => {
+                this.#checkIsParameterExist(fileName);
+                await this.#createNewDirectory(dirName)
+            },
+            // rn:
+            // cp:
+            // mv:
+            // rm:
+            os: parameter => {
+                this.#checkIsParameterExist(parameter);
+                this.printOsInfo(parameter);
+            },
             '.exit': () => this.readline.close(),
         }
 
@@ -67,33 +88,21 @@ export class FileManager {
         const [inputCommand, parameter] = parsedInput;
 
         if (!commandMap.hasOwnProperty(inputCommand)) {
-            this.#throwInputError();
+            this.#throwInputError(`${this.#messages.getUnknownCommand()} '${inputCommand}'`);
         };
 
         try {
             await commandMap[inputCommand](parameter);
 
             if (inputCommand !== '.exit') {
-                this.#printCurrentDirPath();
+                this.printCurrentDirPath();
             }
         } catch (error) {
-            this.#throwOperationError(error.message);
+            throw new Error(`${inputCommand}: ${error.message}`);
         }
     }
 
-    #throwInputError(errorMessage) {
-        if (!errorMessage) {
-            throw new Error(this.#messages.getInvalidInput());
-        } else {
-            throw new Error(`${this.#messages.getInvalidInput()} - ${errorMessage}`);
-        }
-    }
-
-    #throwOperationError(errorMessage) {
-        throw new Error(`${this.#messages.getOperationFailed()} - ${errorMessage}`);
-    }
-
-    #goToUpperDirectory() {
+    goToUpperDirectory() {
         const upperDirectory = getUpperDirectory(this.currentDir);
 
         if (upperDirectory) {
@@ -101,39 +110,29 @@ export class FileManager {
         }
     }
 
-    async #changeDirectory(targetDirectory) {
-        const changedDirectory = await getChangedDirectory(targetDirectory);
-        this.currentDir = changedDirectory;
+    async changeDirectory(targetDirectory) {
+        try {
+            const changedDirectory = await getChangedDirectory(targetDirectory);
+            this.currentDir = changedDirectory;
+        } catch (error) {
+            throw this.#throwInputError(error.message);
+        }
     }
 
-    async #printDirectoryList() {
+    async printDirectoryList() {
         const dirContent = await getDirectoryContent(this.currentDir);
         console.table(dirContent);
     }
 
-    async #printFileContent(filePath) {
-        const fileToRead = await fs.open(filePath);
-        const readStream = fileToRead.createReadStream();
-
-        await new Promise((resolve, reject) => {
-            readStream.on('data', chunk => {
-                process.stdout.write(chunk);
-            });
-            
-            readStream.on('end', () => {
-                console.log('\n');
-                fileToRead.close();
-                resolve();
-            });
-            
-            readStream.on('error', error => {
-                fileToRead.close();
-                reject(error);
-            });
-        });
+    async printFileContent(filePath) {
+        try {
+            await readFileContent(filePath);
+        } catch (error) {
+            this.#throwOperationError(error.message);
+        }
     }
 
-    async #createNewFile(filename) {
+    async createNewFile(filename) {
         const filePath = path.join(this.currentDir, filename);
 
         try {
@@ -141,11 +140,64 @@ export class FileManager {
             await fileToCreate.writeFile('');
             await fileToCreate.close();
           } catch (error) {
-            throw new Error(error);
+            this.#throwOperationError(error.message);
         }
     }
 
-    #printCurrentDirPath() {
-        console.log(this.#messages.getCurrentDir(this.currentDir));
-    };
+    async #createNewDirectory(dirName) {
+        const dirPath = path.join(this.currentDir, dirName);
+
+        try {
+            await fs.access(dirPath);
+            throw new Error('Directory already exists');
+        } catch (error) {
+            if (error.message === 'Directory already exists') {
+                throw error;
+            }
+
+            await fs.mkdir(dirPath, { recursive: true });
+        }
+    }
+
+    printOsInfo(params) {
+        const parametersArray = Object.keys(getCliArguments(params.split(' ')));
+
+        if (!parametersArray.length) {
+            this.#throwInputError(this.#messages.getMissingOperand());
+        }
+
+        if (parametersArray.length > 1) {
+            this.#throwInputError(this.#messages.getTooManyArguments());
+        }
+
+        try {
+            const [parameter] = parametersArray;
+            const osInfo = getOsInfo(parameter)
+            console.log(osInfo);
+        } catch (error) {
+            this.#throwOperationError(error.message);
+        }
+    }
+    
+    #throwInputError(errorMessage = '') {
+        throw new Error(`${this.#messages.getInvalidInput()} - ${errorMessage}`);
+    }
+
+    #throwOperationError(errorMessage) {
+        throw new Error(`${this.#messages.getOperationFailed()} - ${errorMessage}`);
+    }
+
+    async #validatePath(path) {
+        try {
+            await fs.access(path);
+        } catch (error) {
+            this.#throwInputError(error.message);
+        }
+    }
+
+    #checkIsParameterExist(parameter) {
+        if (!parameter) {
+            this.#throwInputError(this.#messages.getMissingOperand());
+        }
+    }
 };

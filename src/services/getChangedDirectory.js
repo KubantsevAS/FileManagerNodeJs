@@ -10,6 +10,6 @@ export const getChangedDirectory = async targetDirectory => {
 
         return process.cwd();
     } catch (error) {
-        throw new Error(error);
+        throw new Error(error.message);
     }
 };
