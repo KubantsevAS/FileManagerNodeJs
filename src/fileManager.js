@@ -67,10 +67,13 @@ export class FileManager {
             add: fileName => this.createNewFile(fileName),
             mkdir: directoryPath => this.createNewDirectory(directoryPath),
             rn: fileNames => this.renameFileName(fileNames),
-            cp: params => this.copyFileToNewDest(params),
-            // mv:
+            cp: params => this.copyFileToNewDirectory(params),
+            mv: params => this.moveFileToNewDirectory(params),
             rm: filePath => this.deleteTargetFile(filePath),
             os: parameter => this.printOsInfo(parameter),
+            // hash:
+            // compress:
+            // decompress:
             '.exit': () => this.readline.close(),
         }
 
@@ -138,11 +141,19 @@ export class FileManager {
         await this.#launchOperation(renameFile, [oldPath, newPath]);
     }
 
-    async copyFileToNewDest(params) {
+    async copyFileToNewDirectory(params) {
         this.#checkIsParameterExist(params);
         const { oldPath: fileName, newPath: targetPath } = await this.#getValidatedPaths(params);
         await this.#validatePath(targetPath);
         await this.#launchOperation(copyFileToDest, [fileName, targetPath]);
+    }
+
+    async moveFileToNewDirectory(params) {
+        this.#checkIsParameterExist(params);
+        const { oldPath: filePath, newPath: targetPath } = await this.#getValidatedPaths(params);
+        await this.#validatePath(targetPath);
+        await this.#launchOperation(copyFileToDest, [filePath, targetPath]);
+        await this.#launchOperation(deleteFile, [filePath]);
     }
 
     async deleteTargetFile(filePath) {
