@@ -7,6 +7,7 @@ export const getChangedDirectory = async targetDirectory => {
     try {
         await access(resolvedPath);
         process.chdir(targetDirectory);
+
         return process.cwd();
     } catch (error) {
         throw new Error(error);

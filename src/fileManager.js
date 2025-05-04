@@ -1,6 +1,7 @@
 import { stdin as input, stdout as output } from 'node:process';
 import * as readline from 'node:readline/promises';
 import fs from 'node:fs/promises';
+import path from 'path';
 import os from 'os';
 
 import {
@@ -54,7 +55,7 @@ export class FileManager {
             cd: targetDirectory => this.#changeDirectory(targetDirectory),
             ls: () => this.#printDirectoryList(),
             cat: filePath => this.#printFileContent(filePath),
-            // add: filePath => this.#printFileContent(filePath),
+            add: fileName => this.#createNewFile(fileName),
             // mkdir: filePath => this.#printFileContent(filePath),
             '.exit': () => this.readline.close(),
         }
@@ -80,8 +81,12 @@ export class FileManager {
         }
     }
 
-    #throwInputError() {
-        throw new Error(this.#messages.getInvalidInput());
+    #throwInputError(errorMessage) {
+        if (!errorMessage) {
+            throw new Error(this.#messages.getInvalidInput());
+        } else {
+            throw new Error(`${this.#messages.getInvalidInput()} - ${errorMessage}`);
+        }
     }
 
     #throwOperationError(errorMessage) {
@@ -126,6 +131,18 @@ export class FileManager {
                 reject(error);
             });
         });
+    }
+
+    async #createNewFile(filename) {
+        const filePath = path.join(this.currentDir, filename);
+
+        try {
+            const fileToCreate = await fs.open(filePath, 'wx');
+            await fileToCreate.writeFile('');
+            await fileToCreate.close();
+          } catch (error) {
+            throw new Error(error);
+        }
     }
 
     #printCurrentDirPath() {
