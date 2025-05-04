@@ -15,12 +15,27 @@ import {
     readFileContent,
     createDirectory,
     copyFileToDest,
+    calculateHash,
     createFile,
     renameFile,
     deleteFile,
     getOsInfo,
 } from './services/index.js';
 
+/**
+ * FileManager class provides a command-line interface for file system operations.
+ * It allows users to navigate directories, view and manipulate files, and perform various system operations.
+ * 
+ * @class
+ * @property {Object} #messages - Messages for user interaction
+ * @property {Object} #cliArguments - Command line arguments
+ * @property {readline.Interface} readline - Interface for reading user input
+ * @property {string} currentDir - Current working directory
+ * 
+ * @example
+ * const fileManager = new FileManager();
+ * await fileManager.initialize();
+ */
 export class FileManager {
     #messages = getMessages();
     #cliArguments = getCliArguments(process.argv);
@@ -71,7 +86,7 @@ export class FileManager {
             mv: params => this.moveFileToNewDirectory(params),
             rm: filePath => this.deleteTargetFile(filePath),
             os: parameter => this.printOsInfo(parameter),
-            // hash:
+            hash: filePath => this.printCalculatedHash(filePath),
             // compress:
             // decompress:
             '.exit': () => this.readline.close(),
@@ -180,6 +195,14 @@ export class FileManager {
         } catch (error) {
             this.#throwOperationError(error.message);
         }
+    }
+
+    async printCalculatedHash(filePath) {
+        await this.#validatePath(filePath);
+        await this.#launchOperation(async filepath => {
+            const hash = await calculateHash(filepath);
+            console.log(hash);
+        }, [filePath]);
     }
     
     #throwInputError(errorMessage) {
