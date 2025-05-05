@@ -80,6 +80,7 @@ export class FileManager {
         process.chdir(this.currentDir);
         console.log(introMessage);
         this.printCurrentDirPath();
+        this.#showPrompt();
     
         this.readline.on('line', async input => {
             try {
@@ -87,6 +88,7 @@ export class FileManager {
                 await this.#handleInput(input);
             } catch (error) {
                 console.error(error.message);
+                this.#showPrompt();
             }
         });
 
@@ -153,6 +155,7 @@ export class FileManager {
         try {
             await commandMap[inputCommand](parameter);
             this.printCurrentDirPath();
+            this.#showPrompt();
         } catch (error) {
             throw new Error(`${inputCommand}: ${error.message}`);
         }
@@ -469,5 +472,16 @@ export class FileManager {
         if (!parameter) {
             this.#throwInputError(this.#messages.getMissingOperand());
         }
+    }
+
+    /**
+     * Shows the command prompt to the user.
+     * This method is called after command execution to indicate that the system is ready for the next input.
+     * 
+     * @private
+     * @returns {void}
+     */
+    #showPrompt() {
+        this.readline.prompt();
     }
 };
