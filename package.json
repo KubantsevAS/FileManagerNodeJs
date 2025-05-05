@@ -14,7 +14,7 @@
     "type": "git",
     "url": "git+https://github.com/KubantsevAS/FileManagerNodeJs.git"
   },
-  "author": "",
+  "author": "aleksandr.kubantsev",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/KubantsevAS/FileManagerNodeJs/issues"
