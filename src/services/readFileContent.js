@@ -1,8 +1,7 @@
 import fs from 'node:fs/promises';
-import path from 'node:path';
 
 export const readFileContent = async filePath => {
-    const fileToRead = await fs.open(path.join(filePath));
+    const fileToRead = await fs.open(filePath);
     const readStream = fileToRead.createReadStream();
 
     await new Promise((resolve, reject) => {

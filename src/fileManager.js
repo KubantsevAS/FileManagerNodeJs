@@ -1,6 +1,6 @@
 import { stdin as input, stdout as output } from 'node:process';
 import * as readline from 'node:readline/promises';
-import fs from 'node:fs/promises';
+import { access } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 
@@ -247,7 +247,7 @@ export class FileManager {
         const normalizedPath = path.join(specifiedPath);
 
         try {
-            await fs.access(normalizedPath);
+            await access(normalizedPath);
 
             return normalizedPath;
         } catch (error) {

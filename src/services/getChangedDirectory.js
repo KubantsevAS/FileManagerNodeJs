@@ -2,7 +2,7 @@ import { access } from 'node:fs/promises';
 import path from 'node:path';
 
 export const getChangedDirectory = async targetDirectory => {
-    const resolvedPath = path.resolve(process.cwd(), path.join(targetDirectory));
+    const resolvedPath = path.resolve(process.cwd(), targetDirectory);
 
     try {
         await access(resolvedPath);

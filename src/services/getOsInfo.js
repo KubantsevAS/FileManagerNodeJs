@@ -1,5 +1,5 @@
-import os from 'node:os';
 import util from 'node:util';
+import os from 'node:os';
 
 export const getOsInfo = parameter => {
     const UNKNOWN_PARAMETER = 'Unknown parameter';

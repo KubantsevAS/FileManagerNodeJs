@@ -3,11 +3,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 export const compressFile = async (filePath, targetPath) => {
-    const sourcePath = path.join(filePath);
-    const sourceFile = path.basename(sourcePath);
+    const sourceFile = path.basename(filePath);
     const compressedFilePath = path.join(targetPath, `${sourceFile}.br`);
     
-    const fileToCompress = await fs.open(sourcePath);
+    const fileToCompress = await fs.open(filePath);
     const compressedFile = await fs.open(compressedFilePath, 'w');
 
     return new Promise((resolve, reject) => {

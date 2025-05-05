@@ -1,9 +1,8 @@
 import fs from 'node:fs/promises';
 import crypto from 'node:crypto';
-import path from 'node:path';
 
 export const calculateHash = async filePath => {
-    const calcHashFile = await fs.open(path.join(filePath));
+    const calcHashFile = await fs.open(filePath);
     const readStream = calcHashFile.createReadStream();
     const hash = crypto.createHash('sha256');
 

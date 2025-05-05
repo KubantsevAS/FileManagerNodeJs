@@ -3,11 +3,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 export const decompressFile = async (filePath, targetPath) => {
-    const sourcePath = path.join(filePath);
-    const sourceFile = path.basename(sourcePath, '.br');
+    const sourceFile = path.basename(filePath, '.br');
     const decompressedFilePath = path.join(targetPath, sourceFile);
     
-    const fileToDecompress = await fs.open(sourcePath);
+    const fileToDecompress = await fs.open(filePath);
     const decompressedFile = await fs.open(decompressedFilePath, 'w');
 
     return new Promise((resolve, reject) => {
