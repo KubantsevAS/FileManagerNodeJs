@@ -15,7 +15,9 @@ import {
     readFileContent,
     createDirectory,
     copyFileToDest,
+    decompressFile,
     calculateHash,
+    compressFile,
     createFile,
     renameFile,
     deleteFile,
@@ -87,8 +89,8 @@ export class FileManager {
             rm: filePath => this.deleteTargetFile(filePath),
             os: parameter => this.printOsInfo(parameter),
             hash: filePath => this.printCalculatedHash(filePath),
-            // compress:
-            // decompress:
+            compress: params => this.compressFileToDirectory(params),
+            decompress: params => this.decompressFileToDirectory(params),
             '.exit': () => this.readline.close(),
         }
 
@@ -203,6 +205,20 @@ export class FileManager {
             const hash = await calculateHash(filepath);
             console.log(hash);
         }, [filePath]);
+    }
+
+    async compressFileToDirectory(params) {
+        this.#checkIsParameterExist(params);
+        const { oldPath: filePath, newPath: targetPath } = await this.#getValidatedPaths(params);
+        await this.#validatePath(targetPath);
+        await this.#launchOperation(compressFile, [filePath, targetPath]);
+    }
+
+    async decompressFileToDirectory(params) {
+        this.#checkIsParameterExist(params);
+        const { oldPath: filePath, newPath: targetPath } = await this.#getValidatedPaths(params);
+        await this.#validatePath(targetPath);
+        await this.#launchOperation(decompressFile, [filePath, targetPath]);
     }
     
     #throwInputError(errorMessage) {
