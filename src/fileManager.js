@@ -91,7 +91,6 @@ export class FileManager {
             hash: filePath => this.printCalculatedHash(filePath),
             compress: params => this.compressFileToDirectory(params),
             decompress: params => this.decompressFileToDirectory(params),
-            '.exit': () => this.readline.close(),
         }
 
         const spaceIdx = input.indexOf(' ');
@@ -100,16 +99,23 @@ export class FileManager {
             : [input];
         const [inputCommand, parameter] = parsedInput;
 
+        if (inputCommand === '.exit') {
+            this.readline.close();
+
+            return;
+        }
+
         if (!commandMap.hasOwnProperty(inputCommand)) {
             this.#throwInputError(`${this.#messages.getUnknownCommand()} '${inputCommand}'`);
         };
 
+        if (!['up', 'ls', 'cd'].includes(inputCommand)) {
+            this.#checkIsParameterExist(parameter);
+        }
+
         try {
             await commandMap[inputCommand](parameter);
-
-            if (inputCommand !== '.exit') {
-                this.printCurrentDirPath();
-            }
+            this.printCurrentDirPath();
         } catch (error) {
             throw new Error(`${inputCommand}: ${error.message}`);
         }
@@ -138,57 +144,48 @@ export class FileManager {
     }
 
     async printFileContent(filePath) {
-        await this.#validatePath(filePath);
-        await this.#launchOperation(readFileContent, [filePath]);
+        const validatedPath = await this.#getValidatedPath(filePath);
+        await this.#launchOperation(readFileContent, [validatedPath]);
     }
 
     async createNewFile(fileName) {
-        this.#checkIsParameterExist(fileName);
         await this.#launchOperation(createFile, [fileName]);
     }
 
     async createNewDirectory(directoryPath) {
-        this.#checkIsParameterExist(directoryPath);
         await this.#launchOperation(createDirectory, [directoryPath]);
     }
 
-    async renameFileName(fileNames) {
-        this.#checkIsParameterExist(fileNames);
-        const { oldPath, newPath } = await this.#getValidatedPaths(fileNames);
-        await this.#launchOperation(renameFile, [oldPath, newPath]);
+    async renameFileName(params) {
+        const filePaths = params.split(' ');
+        this.#checkIsArgsCountMatchLimit(filePaths.length, 2);
+
+        const [oldPath, newPath] = filePaths;
+        const validatedPath = await this.#getValidatedPath(oldPath);
+        await this.#launchOperation(renameFile, [validatedPath, path.join(newPath)]);
     }
 
     async copyFileToNewDirectory(params) {
-        this.#checkIsParameterExist(params);
-        const { oldPath: fileName, newPath: targetPath } = await this.#getValidatedPaths(params);
-        await this.#validatePath(targetPath);
-        await this.#launchOperation(copyFileToDest, [fileName, targetPath]);
+        const validatedPaths = await this.#getValidatedPaths(params);
+        await this.#launchOperation(copyFileToDest, validatedPaths);
     }
 
     async moveFileToNewDirectory(params) {
-        this.#checkIsParameterExist(params);
-        const { oldPath: filePath, newPath: targetPath } = await this.#getValidatedPaths(params);
-        await this.#validatePath(targetPath);
-        await this.#launchOperation(copyFileToDest, [filePath, targetPath]);
-        await this.#launchOperation(deleteFile, [filePath]);
+        const validatedPaths = await this.#getValidatedPaths(params);
+        const [fileName] = validatedPaths;
+        
+        await this.#launchOperation(copyFileToDest, validatedPaths);
+        await this.#launchOperation(deleteFile, [fileName]);
     }
 
     async deleteTargetFile(filePath) {
-        await this.#validatePath(filePath);
-        await this.#launchOperation(deleteFile, [filePath]);
+        const validatedPath = await this.#getValidatedPath(filePath);
+        await this.#launchOperation(deleteFile, [validatedPath]);
     }
 
     printOsInfo(params) {
-        this.#checkIsParameterExist(params);
         const parametersArray = Object.keys(getCliArguments(params.split(' ')));
-
-        if (!parametersArray.length) {
-            this.#throwInputError(this.#messages.getMissingOperand());
-        }
-
-        if (parametersArray.length > 1) {
-            this.#throwInputError(this.#messages.getTooManyArguments());
-        }
+        this.#checkIsArgsCountMatchLimit(parametersArray.length, 1);
 
         try {
             const [parameter] = parametersArray;
@@ -200,25 +197,21 @@ export class FileManager {
     }
 
     async printCalculatedHash(filePath) {
-        await this.#validatePath(filePath);
+        const validatedPath = await this.#getValidatedPath(filePath);
         await this.#launchOperation(async filepath => {
             const hash = await calculateHash(filepath);
             console.log(hash);
-        }, [filePath]);
+        }, [validatedPath]);
     }
 
     async compressFileToDirectory(params) {
-        this.#checkIsParameterExist(params);
-        const { oldPath: filePath, newPath: targetPath } = await this.#getValidatedPaths(params);
-        await this.#validatePath(targetPath);
-        await this.#launchOperation(compressFile, [filePath, targetPath]);
+        const validatedPaths = await this.#getValidatedPaths(params);
+        await this.#launchOperation(compressFile, validatedPaths);
     }
 
     async decompressFileToDirectory(params) {
-        this.#checkIsParameterExist(params);
-        const { oldPath: filePath, newPath: targetPath } = await this.#getValidatedPaths(params);
-        await this.#validatePath(targetPath);
-        await this.#launchOperation(decompressFile, [filePath, targetPath]);
+        const validatedPaths = await this.#getValidatedPaths(params);
+        await this.#launchOperation(decompressFile, validatedPaths);
     }
     
     #throwInputError(errorMessage) {
@@ -239,26 +232,36 @@ export class FileManager {
 
     async #getValidatedPaths(specifiedPaths) {
         const paths = specifiedPaths.split(' ');
+        this.#checkIsArgsCountMatchLimit(paths.length, 2);
 
-        if (paths.length < 2) {
+        const validatedPaths = await Promise.all(paths.map(async path => {
+            const validPath = await this.#getValidatedPath(path);
+
+            return validPath
+        }));
+
+        return validatedPaths;
+    }
+
+    async #getValidatedPath(specifiedPath) {
+        const normalizedPath = path.join(specifiedPath);
+
+        try {
+            await fs.access(normalizedPath);
+
+            return normalizedPath;
+        } catch (error) {
+            this.#throwInputError(error.message);
+        }
+    }
+
+    #checkIsArgsCountMatchLimit(argsCount, limit) {
+        if (argsCount < limit) {
             this.#throwInputError(this.#messages.getMissingOperand());
         }
 
-        if (paths.length > 2) {
+        if (argsCount > limit) {
             this.#throwInputError(this.#messages.getTooManyArguments());
-        }
-
-        const [oldPath, newPath] = paths;
-        await this.#validatePath(oldPath);
-
-        return { oldPath: path.join(oldPath), newPath: path.join(newPath) };
-    }
-
-    async #validatePath(specifiedPath) {
-        try {
-            await fs.access(path.join(specifiedPath));
-        } catch (error) {
-            this.#throwInputError(error.message);
         }
     }
 

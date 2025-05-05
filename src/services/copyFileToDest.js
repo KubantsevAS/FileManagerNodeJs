@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises';
-import path from 'path';
+import path from 'node:path';
 
 export const copyFileToDest = async (fileName, targetDest) => {
     const copiedFilePath = path.join(targetDest, fileName);

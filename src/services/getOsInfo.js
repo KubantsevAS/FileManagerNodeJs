@@ -12,7 +12,7 @@ export const getOsInfo = parameter => {
                 .map((cpu, index) => `CPU ${index + 1}: Model: ${cpu.model}, Clock Rate: ${convertMHzToGHz(cpu.speed)} GHz`)
                 .join('\n');
 
-            return `Total number of CPUs: ${cpus.length}\n${cpusInfo}`;
+            return `Total number of CPUs: ${cpus.length}\n${cpusInfo}\n`;
         },
         homedir: () => os.homedir(),
         username: () => os.userInfo().username,
